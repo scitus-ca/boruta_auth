@@ -125,7 +125,7 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
     test "returns a code", %{client: client, resource_owner: resource_owner} do
       ResourceOwners
       |> stub(:get_by, fn _params -> {:ok, resource_owner} end)
-      |> stub(:authorized_scopes, fn (_resource_owner) -> [] end)
+      |> stub(:authorized_scopes, fn _resource_owner -> [] end)
 
       redirect_uri = List.first(client.redirect_uris)
 
@@ -143,7 +143,7 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
         {:authorize_success,
          %AuthorizeResponse{
            type: type,
-           value: value,
+           code: value,
            expires_in: expires_in
          }} ->
           assert type == "code"
@@ -158,7 +158,7 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
     test "returns a code with public scope", %{client: client, resource_owner: resource_owner} do
       ResourceOwners
       |> stub(:get_by, fn _params -> {:ok, resource_owner} end)
-      |> stub(:authorized_scopes, fn (_resource_owner) -> [] end)
+      |> stub(:authorized_scopes, fn _resource_owner -> [] end)
 
       given_scope = "public"
       redirect_uri = List.first(client.redirect_uris)
@@ -178,7 +178,7 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
         {:authorize_success,
          %AuthorizeResponse{
            type: type,
-           value: value,
+           code: value,
            expires_in: expires_in
          }} ->
           assert type == "code"
@@ -193,7 +193,7 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
     test "returns an error with private scope", %{client: client, resource_owner: resource_owner} do
       ResourceOwners
       |> stub(:get_by, fn _params -> {:ok, resource_owner} end)
-      |> stub(:authorized_scopes, fn (_resource_owner) -> [] end)
+      |> stub(:authorized_scopes, fn _resource_owner -> [] end)
 
       given_scope = "private"
       redirect_uri = List.first(client.redirect_uris)
@@ -226,7 +226,7 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
     } do
       ResourceOwners
       |> stub(:get_by, fn _params -> {:ok, resource_owner} end)
-      |> stub(:authorized_scopes, fn (_resource_owner) -> [] end)
+      |> stub(:authorized_scopes, fn _resource_owner -> [] end)
 
       %{name: given_scope} = List.first(client.authorized_scopes)
       redirect_uri = List.first(client.redirect_uris)
@@ -246,7 +246,7 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
         {:authorize_success,
          %AuthorizeResponse{
            type: type,
-           value: value,
+           code: value,
            expires_in: expires_in
          }} ->
           assert type == "code"
@@ -263,9 +263,10 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
       resource_owner: resource_owner
     } do
       given_scope = %Scope{name: "resource_owner:scope"}
+
       ResourceOwners
       |> stub(:get_by, fn _params -> {:ok, resource_owner} end)
-      |> stub(:authorized_scopes, fn (_resource_owner) -> [given_scope] end)
+      |> stub(:authorized_scopes, fn _resource_owner -> [given_scope] end)
 
       redirect_uri = List.first(client.redirect_uris)
 
@@ -284,7 +285,7 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
         {:authorize_success,
          %AuthorizeResponse{
            type: type,
-           value: value,
+           code: value,
            expires_in: expires_in
          }} ->
           assert type == "code"
@@ -302,7 +303,7 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
     } do
       ResourceOwners
       |> stub(:get_by, fn _params -> {:ok, resource_owner} end)
-      |> stub(:authorized_scopes, fn (_resource_owner) -> [] end)
+      |> stub(:authorized_scopes, fn _resource_owner -> [] end)
 
       given_scope = "bad_scope"
       redirect_uri = List.first(client.redirect_uris)
@@ -360,7 +361,7 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
     test "returns a code with state", %{client: client, resource_owner: resource_owner} do
       ResourceOwners
       |> stub(:get_by, fn _params -> {:ok, resource_owner} end)
-      |> stub(:authorized_scopes, fn (_resource_owner) -> [] end)
+      |> stub(:authorized_scopes, fn _resource_owner -> [] end)
 
       given_state = "state"
       redirect_uri = List.first(client.redirect_uris)
@@ -380,7 +381,7 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
         {:authorize_success,
          %AuthorizeResponse{
            type: type,
-           value: value,
+           code: value,
            expires_in: expires_in,
            state: state
          }} ->
@@ -400,7 +401,7 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
     } do
       ResourceOwners
       |> stub(:get_by, fn _params -> {:ok, resource_owner} end)
-      |> stub(:authorized_scopes, fn (_resource_owner) -> [] end)
+      |> stub(:authorized_scopes, fn _resource_owner -> [] end)
 
       given_state = "state"
       redirect_uri = List.first(client.redirect_uris)
@@ -434,7 +435,7 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
     } do
       ResourceOwners
       |> stub(:get_by, fn _params -> {:ok, resource_owner} end)
-      |> stub(:authorized_scopes, fn (_resource_owner) -> [] end)
+      |> stub(:authorized_scopes, fn _resource_owner -> [] end)
 
       given_state = "state"
       given_code_challenge = "code challenge"
@@ -458,7 +459,7 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
         {:authorize_success,
          %AuthorizeResponse{
            type: type,
-           value: value,
+           code: value,
            expires_in: expires_in,
            state: state,
            code_challenge: code_challenge,
@@ -492,7 +493,7 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
     } do
       ResourceOwners
       |> stub(:get_by, fn _params -> {:ok, resource_owner} end)
-      |> stub(:authorized_scopes, fn (_resource_owner) -> [] end)
+      |> stub(:authorized_scopes, fn _resource_owner -> [] end)
 
       given_state = "state"
       given_code_challenge = "code challenge"
@@ -513,10 +514,10 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
            ) do
         {:authorize_success,
          %AuthorizeResponse{
-           value: value
+           code: value
          }} ->
           %Ecto.Token{
-            code_challenge_method: repo_code_challenge_method,
+            code_challenge_method: repo_code_challenge_method
           } = Repo.get_by(Ecto.Token, value: value)
 
           assert repo_code_challenge_method == "plain"
@@ -754,7 +755,11 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
       end
     end
 
-    test "returns a token from cache", %{client: client, code: code, resource_owner: resource_owner} do
+    test "returns a token from cache", %{
+      client: client,
+      code: code,
+      resource_owner: resource_owner
+    } do
       %{req_headers: [{"authorization", authorization_header}]} = using_basic_auth("test", "test")
 
       ResourceOwners
