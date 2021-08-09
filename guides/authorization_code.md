@@ -47,7 +47,7 @@ As stated in OAuth 2.0 RFC [Authorization code grant](https://tools.ietf.org/htm
 ### Code example
 - lib/my_app_web/resource_owners.ex
 
-```
+```elixir
 defmodule MyApp.ResourceOwners do
   @behaviour Boruta.Oauth.ResourceOwners
 
@@ -84,7 +84,7 @@ end
 - lib/my_app_web/views/oauth_view.ex
 
 
-```
+```elixir
 defmodule MyAppWeb.OauthView do
   use MyAppWeb, :view
 
@@ -94,16 +94,22 @@ defmodule MyAppWeb.OauthView do
     response: %TokenResponse{
         token_type: token_type,
         access_token: access_token,
+        id_token: id_token,
         expires_in: expires_in,
         refresh_token: refresh_token
       }
   }) do
-    %{
+    response = %{
       token_type: token_type,
       access_token: access_token,
       expires_in: expires_in,
       refresh_token: refresh_token
     }
+    case id_token do
+      nil -> response
+      id_token ->
+        Map.put(response, :id_token, id_token)
+    end
   end
 
   def render("error.json", %{error: error, error_description: error_description}) do
@@ -117,14 +123,14 @@ end
 
 - lib/my_app_web/templates/oauth/error.html.eex
 
-```
+```html
 <h1><%= @error %> - An error occured while authorizing request, check client OAuth configuration</h1>
 <p><%= @error_description %></p>
 ```
 
 - lib/my_app_web/controllers/oauth_controller.ex
 
-```
+```elixir
 defmodule MyAppWeb.OauthController do
   @behaviour Boruta.Oauth.Application
 
@@ -172,7 +178,7 @@ defmodule MyAppWeb.OauthController do
         %AuthorizeResponse{
           type: type,
           redirect_uri: redirect_uri,
-          value: value,
+          code: code,
           expires_in: expires_in,
           state: state
         }
@@ -180,17 +186,13 @@ defmodule MyAppWeb.OauthController do
     query_string =
       case state do
         nil ->
-          URI.encode_query(%{type => value, "expires_in" => expires_in})
+          URI.encode_query(%{"code" => code, "expires_in" => expires_in})
 
         state ->
-          URI.encode_query(%{type => value, "expires_in" => expires_in, "state" => state})
+          URI.encode_query(%{"code" => code, "expires_in" => expires_in, "state" => state})
       end
 
-    url =
-      case type do
-        "access_token" -> "#{redirect_uri}##{query_string}"
-        "code" -> "#{redirect_uri}?#{query_string}"
-      end
+    url = "#{redirect_uri}?#{query_string}"
 
     redirect(conn, external: url)
   end
@@ -249,7 +251,7 @@ end
 
 - lib/my_app_web/router.ex
 
-```
+```elixir
 defmodule MyAppWeb.Router do
   use MyAppWeb, :router
 
