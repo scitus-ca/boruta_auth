@@ -11,6 +11,7 @@ defmodule Boruta.Factory do
       redirect_uris: ["https://redirect.uri/oauth2-redirect-path"],
       access_token_ttl: 3600,
       authorization_code_ttl: 60,
+      refresh_token_ttl: 3600 * 24 * 30,
       private_key:
         "***REMOVED***\n\n",
       public_key:
