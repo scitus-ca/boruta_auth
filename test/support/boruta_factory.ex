@@ -12,6 +12,7 @@ defmodule Boruta.Factory do
       access_token_ttl: 3600,
       authorization_code_ttl: 60,
       refresh_token_ttl: 3600 * 24 * 30,
+      id_token_ttl: 3600 * 24,
       private_key:
         "***REMOVED***\n\n",
       public_key:
@@ -31,6 +32,7 @@ defmodule Boruta.Factory do
       client: build(:client),
       type: "access_token",
       value: Boruta.TokenGenerator.generate(),
+      refresh_token: Boruta.TokenGenerator.generate(),
       expires_at: :os.system_time(:seconds) + 10
     }
   end
