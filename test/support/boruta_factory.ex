@@ -12,6 +12,7 @@ defmodule Boruta.Factory do
       access_token_ttl: 3600,
       authorization_code_ttl: 60,
       refresh_token_ttl: 3600 * 24 * 30,
+      id_token_ttl: 3600 * 24,
       private_key:
         "***REMOVED***\n\n",
       public_key:
