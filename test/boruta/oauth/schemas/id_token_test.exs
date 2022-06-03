@@ -216,27 +216,8 @@ defmodule Boruta.Oauth.IdTokenTest do
   end
 
   describe "with RS256 algorithm configuration" do
-    setup do
-      current_config = Application.get_env(:boruta, Boruta.Oauth)
-
-      rs256_config =
-        Keyword.merge(current_config,
-          algorithms: [
-            id_token_signature: [
-              alg: :RS256
-            ]
-          ]
-        )
-
-      Application.put_env(:boruta, Boruta.Oauth, rs256_config)
-
-      on_exit(fn ->
-        Application.put_env(:boruta, Boruta.Oauth, current_config)
-      end)
-    end
-
     test "generates an id token with a token and a code", %{resource_owner: resource_owner} do
-      client = build_client()
+      client = %{build_client()|id_token_signature_alg: "RS256"}
       inserted_at = DateTime.utc_now()
       last_login_at = DateTime.utc_now()
       resource_owner = %{resource_owner | last_login_at: last_login_at}
@@ -296,27 +277,8 @@ defmodule Boruta.Oauth.IdTokenTest do
   end
 
   describe "with RS384 algorithm configuration" do
-    setup do
-      current_config = Application.get_env(:boruta, Boruta.Oauth)
-
-      rs384_config =
-        Keyword.merge(current_config,
-          algorithms: [
-            id_token_signature: [
-              alg: :RS384
-            ]
-          ]
-        )
-
-      Application.put_env(:boruta, Boruta.Oauth, rs384_config)
-
-      on_exit(fn ->
-        Application.put_env(:boruta, Boruta.Oauth, current_config)
-      end)
-    end
-
     test "generates an id token with a token and a code", %{resource_owner: resource_owner} do
-      client = build_client()
+      client = %{build_client()|id_token_signature_alg: "RS384"}
       inserted_at = DateTime.utc_now()
       last_login_at = DateTime.utc_now()
       resource_owner = %{resource_owner | last_login_at: last_login_at}
@@ -375,64 +337,11 @@ defmodule Boruta.Oauth.IdTokenTest do
     end
   end
 
-  describe "with unknown algorithm configuration" do
-    setup do
-      current_config = Application.get_env(:boruta, Boruta.Oauth)
-
-      unknown_config =
-        Keyword.merge(current_config,
-          algorithms: [
-            id_token_signature: [
-              alg: :unknown
-            ]
-          ]
-        )
-
-      Application.put_env(:boruta, Boruta.Oauth, unknown_config)
-
-      on_exit(fn ->
-        Application.put_env(:boruta, Boruta.Oauth, current_config)
-      end)
-    end
-
-    test "raises an error", %{resource_owner: resource_owner} do
-      client = build_client()
-      inserted_at = DateTime.utc_now()
-      last_login_at = DateTime.utc_now()
-      resource_owner = %{resource_owner | last_login_at: last_login_at}
-
-      code = %Token{
-        type: "code",
-        sub: "sub",
-        client: client,
-        value: "value",
-        inserted_at: inserted_at,
-        resource_owner: resource_owner,
-        scope: "scope"
-      }
-
-      token = %Token{
-        type: "access_token",
-        sub: "sub",
-        client: client,
-        value: "value",
-        inserted_at: inserted_at,
-        resource_owner: resource_owner,
-        scope: "scope"
-      }
-
-      nonce = "nonce"
-
-      assert_raise RuntimeError, fn ->
-        IdToken.generate(%{token: token, code: code}, nonce)
-      end
-    end
-  end
-
   def build_client do
     %Client{
       id: "client_id",
       id_token_ttl: 10,
+      id_token_signature_alg: "RS512",
       private_key:
         "***REMOVED***\n\n"
     }
