@@ -217,7 +217,7 @@ defmodule Boruta.Oauth.IdTokenTest do
 
   describe "with RS256 algorithm configuration" do
     test "generates an id token with a token and a code", %{resource_owner: resource_owner} do
-      client = %{build_client()|id_token_signature_alg: "RS256"}
+      client = %{build_client() | id_token_signature_alg: "RS256"}
       inserted_at = DateTime.utc_now()
       last_login_at = DateTime.utc_now()
       resource_owner = %{resource_owner | last_login_at: last_login_at}
@@ -278,7 +278,7 @@ defmodule Boruta.Oauth.IdTokenTest do
 
   describe "with RS384 algorithm configuration" do
     test "generates an id token with a token and a code", %{resource_owner: resource_owner} do
-      client = %{build_client()|id_token_signature_alg: "RS384"}
+      client = %{build_client() | id_token_signature_alg: "RS384"}
       inserted_at = DateTime.utc_now()
       last_login_at = DateTime.utc_now()
       resource_owner = %{resource_owner | last_login_at: last_login_at}
@@ -337,11 +337,195 @@ defmodule Boruta.Oauth.IdTokenTest do
     end
   end
 
+  describe "with HS256 algorithm configuration" do
+    test "generates an id token with a token and a code", %{resource_owner: resource_owner} do
+      client = %{build_client() | id_token_signature_alg: "HS256"}
+      inserted_at = DateTime.utc_now()
+      last_login_at = DateTime.utc_now()
+      resource_owner = %{resource_owner | last_login_at: last_login_at}
+
+      code = %Token{
+        type: "code",
+        sub: "sub",
+        client: client,
+        value: "value",
+        inserted_at: inserted_at,
+        resource_owner: resource_owner,
+        scope: "scope"
+      }
+
+      token = %Token{
+        type: "access_token",
+        sub: "sub",
+        client: client,
+        value: "value",
+        inserted_at: inserted_at,
+        resource_owner: resource_owner,
+        scope: "scope"
+      }
+
+      nonce = "nonce"
+
+      assert %{
+               sub: "sub",
+               client: ^client,
+               inserted_at: ^inserted_at,
+               scope: "scope",
+               value: value,
+               type: "id_token"
+             } = IdToken.generate(%{token: token, code: code}, nonce)
+
+      signer = Joken.Signer.create("HS256", client.secret)
+
+      {:ok, claims} = IdToken.Token.verify_and_validate(value, signer)
+      client_id = client.id
+      auth_time = DateTime.to_unix(last_login_at)
+
+      assert %{
+               "aud" => ^client_id,
+               "iat" => _iat,
+               "exp" => _exp,
+               "sub" => "sub",
+               "nonce" => ^nonce,
+               "at_hash" => at_hash,
+               "c_hash" => c_hash,
+               "auth_time" => ^auth_time,
+               "resource_owner_claim" => "claim"
+             } = claims
+
+      assert at_hash == "zUJATVKtVcz6mspK3IKKpYAK2dOFoGcfvL9yQRgyBhk"
+      assert c_hash == "zUJATVKtVcz6mspK3IKKpYAK2dOFoGcfvL9yQRgyBhk"
+    end
+  end
+
+  describe "with HS384 algorithm configuration" do
+    test "generates an id token with a token and a code", %{resource_owner: resource_owner} do
+      client = %{build_client() | id_token_signature_alg: "HS384"}
+      inserted_at = DateTime.utc_now()
+      last_login_at = DateTime.utc_now()
+      resource_owner = %{resource_owner | last_login_at: last_login_at}
+
+      code = %Token{
+        type: "code",
+        sub: "sub",
+        client: client,
+        value: "value",
+        inserted_at: inserted_at,
+        resource_owner: resource_owner,
+        scope: "scope"
+      }
+
+      token = %Token{
+        type: "access_token",
+        sub: "sub",
+        client: client,
+        value: "value",
+        inserted_at: inserted_at,
+        resource_owner: resource_owner,
+        scope: "scope"
+      }
+
+      nonce = "nonce"
+
+      assert %{
+               sub: "sub",
+               client: ^client,
+               inserted_at: ^inserted_at,
+               scope: "scope",
+               value: value,
+               type: "id_token"
+             } = IdToken.generate(%{token: token, code: code}, nonce)
+
+      signer = Joken.Signer.create("HS384", client.secret)
+
+      {:ok, claims} = IdToken.Token.verify_and_validate(value, signer)
+      client_id = client.id
+      auth_time = DateTime.to_unix(last_login_at)
+
+      assert %{
+               "aud" => ^client_id,
+               "iat" => _iat,
+               "exp" => _exp,
+               "sub" => "sub",
+               "nonce" => ^nonce,
+               "at_hash" => at_hash,
+               "c_hash" => c_hash,
+               "auth_time" => ^auth_time,
+               "resource_owner_claim" => "claim"
+             } = claims
+
+      assert at_hash == "tGx8OeFdPcLNxQ5Cp6KBgaB0zu8Yx8SqL22Yf7gOFlk"
+      assert c_hash == "tGx8OeFdPcLNxQ5Cp6KBgaB0zu8Yx8SqL22Yf7gOFlk"
+    end
+  end
+
+  describe "with HS512 algorithm configuration" do
+    test "generates an id token with a token and a code", %{resource_owner: resource_owner} do
+      client = %{build_client() | id_token_signature_alg: "HS512"}
+      inserted_at = DateTime.utc_now()
+      last_login_at = DateTime.utc_now()
+      resource_owner = %{resource_owner | last_login_at: last_login_at}
+
+      code = %Token{
+        type: "code",
+        sub: "sub",
+        client: client,
+        value: "value",
+        inserted_at: inserted_at,
+        resource_owner: resource_owner,
+        scope: "scope"
+      }
+
+      token = %Token{
+        type: "access_token",
+        sub: "sub",
+        client: client,
+        value: "value",
+        inserted_at: inserted_at,
+        resource_owner: resource_owner,
+        scope: "scope"
+      }
+
+      nonce = "nonce"
+
+      assert %{
+               sub: "sub",
+               client: ^client,
+               inserted_at: ^inserted_at,
+               scope: "scope",
+               value: value,
+               type: "id_token"
+             } = IdToken.generate(%{token: token, code: code}, nonce)
+
+      signer = Joken.Signer.create("HS512", client.secret)
+
+      {:ok, claims} = IdToken.Token.verify_and_validate(value, signer)
+      client_id = client.id
+      auth_time = DateTime.to_unix(last_login_at)
+
+      assert %{
+               "aud" => ^client_id,
+               "iat" => _iat,
+               "exp" => _exp,
+               "sub" => "sub",
+               "nonce" => ^nonce,
+               "at_hash" => at_hash,
+               "c_hash" => c_hash,
+               "auth_time" => ^auth_time,
+               "resource_owner_claim" => "claim"
+             } = claims
+
+      assert at_hash == "7CyD7ey2AwTRVOvbhb369hqSvRQuccT3sloVuctfPAo"
+      assert c_hash == "7CyD7ey2AwTRVOvbhb369hqSvRQuccT3sloVuctfPAo"
+    end
+  end
+
   def build_client do
     %Client{
       id: "client_id",
       id_token_ttl: 10,
       id_token_signature_alg: "RS512",
+      secret: "secret",
       private_key:
         "***REMOVED***\n\n"
     }
