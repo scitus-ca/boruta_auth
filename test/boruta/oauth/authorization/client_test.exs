@@ -20,7 +20,8 @@ defmodule Boruta.Oauth.Authorization.ClientTest do
       assert {:error,
               %Error{
                 error: :invalid_client,
-                error_description: "Given client expects the credentials to be provided with POST body parameters."
+                error_description:
+                  "Given client expects the credentials to be provided with POST body parameters."
               }} =
                Client.authorize(id: client.id, source: source, grant_type: "client_credentials")
 
@@ -29,7 +30,8 @@ defmodule Boruta.Oauth.Authorization.ClientTest do
       assert {:error,
               %Error{
                 error: :invalid_client,
-                error_description: "Given client expects the credentials to be provided with POST body parameters."
+                error_description:
+                  "Given client expects the credentials to be provided with POST body parameters."
               }} =
                Client.authorize(id: client.id, source: source, grant_type: "client_credentials")
     end
@@ -41,7 +43,8 @@ defmodule Boruta.Oauth.Authorization.ClientTest do
       assert {:error,
               %Error{
                 error: :invalid_client,
-                error_description: "Given client expects the credentials to be provided with BasicAuth."
+                error_description:
+                  "Given client expects the credentials to be provided with BasicAuth."
               }} =
                Client.authorize(id: client.id, source: source, grant_type: "client_credentials")
 
@@ -50,7 +53,8 @@ defmodule Boruta.Oauth.Authorization.ClientTest do
       assert {:error,
               %Error{
                 error: :invalid_client,
-                error_description: "Given client expects the credentials to be provided with BasicAuth."
+                error_description:
+                  "Given client expects the credentials to be provided with BasicAuth."
               }} =
                Client.authorize(id: client.id, source: source, grant_type: "client_credentials")
     end
@@ -62,7 +66,8 @@ defmodule Boruta.Oauth.Authorization.ClientTest do
       assert {:error,
               %Error{
                 error: :invalid_client,
-                error_description: "Given client expects the credentials to be provided with a jwt assertion."
+                error_description:
+                  "Given client expects the credentials to be provided with a jwt assertion."
               }} =
                Client.authorize(id: client.id, source: source, grant_type: "client_credentials")
 
@@ -71,7 +76,8 @@ defmodule Boruta.Oauth.Authorization.ClientTest do
       assert {:error,
               %Error{
                 error: :invalid_client,
-                error_description: "Given client expects the credentials to be provided with a jwt assertion."
+                error_description:
+                  "Given client expects the credentials to be provided with a jwt assertion."
               }} =
                Client.authorize(id: client.id, source: source, grant_type: "client_credentials")
     end
@@ -89,7 +95,8 @@ defmodule Boruta.Oauth.Authorization.ClientTest do
       assert {:error,
               %Error{
                 error: :invalid_client,
-                error_description: "Given client expects the credentials to be provided with a jwt assertion."
+                error_description:
+                  "Given client expects the credentials to be provided with a jwt assertion."
               }} =
                Client.authorize(id: client.id, source: source, grant_type: "client_credentials")
 
@@ -98,7 +105,8 @@ defmodule Boruta.Oauth.Authorization.ClientTest do
       assert {:error,
               %Error{
                 error: :invalid_client,
-                error_description: "Given client expects the credentials to be provided with a jwt assertion."
+                error_description:
+                  "Given client expects the credentials to be provided with a jwt assertion."
               }} =
                Client.authorize(id: client.id, source: source, grant_type: "client_credentials")
     end
@@ -116,7 +124,8 @@ defmodule Boruta.Oauth.Authorization.ClientTest do
       assert {:error,
               %Error{
                 error: :invalid_client,
-                error_description: "Bad client jwt authentication method configuration (jwks and token endpoint jwt auth algorithm do not match)."
+                error_description:
+                  "Bad client jwt authentication method configuration (jwks and token endpoint jwt auth algorithm do not match)."
               }} =
                Client.authorize(id: client.id, source: source, grant_type: "client_credentials")
     end
@@ -204,6 +213,32 @@ defmodule Boruta.Oauth.Authorization.ClientTest do
                Client.authorize(id: client.id, source: source, grant_type: "client_credentials")
     end
 
+    test "authorizes with private key jwt auth method with key rotation" do
+      bypass = Bypass.open()
+      jwks_uri = "http://localhost:#{bypass.port}/jwks"
+
+      client =
+        insert(:client,
+          token_endpoint_auth_methods: ["private_key_jwt"],
+          token_endpoint_jwt_auth_alg: "RS512",
+          jwt_public_key: valid_public_key(),
+          jwks_uri: jwks_uri
+        )
+
+      signer = Joken.Signer.create("RS512", %{"pem" => other_valid_private_key()})
+      {:ok, client_assertion, _claims} = Token.encode_and_sign(%{}, signer)
+      source = %{type: "jwt", value: client_assertion}
+
+      {_, jwk} = JOSE.JWK.from_pem(other_valid_public_key()) |> JOSE.JWK.to_map()
+      jwk = Map.put(jwk, "alg", "RS512")
+      Bypass.expect_once(bypass, "GET", "/jwks", fn conn ->
+        Plug.Conn.resp(conn, 200, Jason.encode!(%{"keys" => [jwk]}))
+      end)
+
+      assert {:ok, _client} =
+               Client.authorize(id: client.id, source: source, grant_type: "client_credentials")
+    end
+
     test "returns an error with nil private key jwt auth method" do
       client =
         insert(:client,
@@ -249,6 +284,14 @@ defmodule Boruta.Oauth.Authorization.ClientTest do
 
   def valid_private_key do
     "***REMOVED***\n\n"
+  end
+
+  def other_valid_private_key do
+    "***REMOVED***\n"
+  end
+
+  def other_valid_public_key do
+    "-----BEGIN RSA PUBLIC KEY-----\nMIGJAoGBAN0Mhw3A4JqMERW8ObFDLBYOMnmIDo3BJo9h8OYGlahXeCt1rvoNNHnN\no3lRy6nasZR4CE+brZHU9qq9Nukoyy6+qBddidwQ3Sh3T98GqCh8IEWh0F84i8ZA\noVXURCS+s4I/SbA7JjiS3zvwjUklk55fGm90jEArzF+JUH2LsSGFAgMBAAE=\n-----END RSA PUBLIC KEY-----\n"
   end
 
   def invalid_private_key do
