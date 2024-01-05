@@ -17,7 +17,7 @@ defmodule Boruta.Openid.CredentialResponse do
   }, _credential_params) do
     %__MODULE__{
       format: "jwt_vc_json",
-      credential: ""
+    credential: "***REMOVED***"
     }
   end
 end
