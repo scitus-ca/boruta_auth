@@ -20,4 +20,5 @@ defmodule Boruta.Openid.CredentialResponse do
     credential: "***REMOVED***"
     }
   end
+M
 end
