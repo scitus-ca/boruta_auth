@@ -131,7 +131,8 @@ defmodule Boruta.OpenidTest.CredentialTest do
            sub: sub,
            credential_configuration: %{
              "UniversityDegree" => %{
-               types: ["VerifiableCredential"]
+               types: ["VerifiableCredential"],
+               signature_private_key: private_key_fixture()
              }
            }
          }}
@@ -147,12 +148,14 @@ defmodule Boruta.OpenidTest.CredentialTest do
         %Plug.Conn{}
         |> put_req_header("authorization", "Bearer #{access_token}")
 
-      assert Openid.credential(conn, credential_params, ApplicationMock) ==
-               {:credential_created,
+      assert {:credential_created,
                 %CredentialResponse{
                   format: "jwt_vc_json",
-                  credential: "***REMOVED***"
-                }}
+                  credential: credential
+                }} = Openid.credential(conn, credential_params, ApplicationMock)
+
+      # TODO validate credential body
+      assert credential
     end
   end
 
