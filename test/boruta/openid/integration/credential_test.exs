@@ -3,12 +3,18 @@ defmodule Boruta.OpenidTest.CredentialTest do
 
   import Boruta.Factory
   import Plug.Conn
+  import Mox
 
+  alias Boruta.Config
   alias Boruta.Ecto.Token
   alias Boruta.Oauth.Error
+  alias Boruta.Oauth.ResourceOwner
   alias Boruta.Openid
   alias Boruta.Openid.ApplicationMock
   alias Boruta.Openid.CredentialResponse
+  alias Boruta.VerifiableCredentials
+
+  setup :verify_on_exit!
 
   describe "deliver verifiable credentials" do
     test "returns an error with no access token" do
@@ -62,13 +68,23 @@ defmodule Boruta.OpenidTest.CredentialTest do
                   status: :bad_request,
                   error: :invalid_request,
                   error_description:
-                    "Request body validation failed. Required property credential_identifier is missing at #."
+                    "Request body validation failed. Required properties types, proof are missing at #."
                 }}
     end
 
-    test "returns an error with an invalid credential_identifier" do
-      credential_params = %{"credential_identifier" => "bad identifier"}
-      %Token{value: access_token} = insert(:token)
+    test "returns an error with an invalid types" do
+      credential_params = %{
+        "types" => ["bad type"],
+        "proof" => %{"proof_type" => "jwt", "jwt" => ""}
+      }
+
+      sub = SecureRandom.uuid()
+
+      expect(Boruta.Support.ResourceOwners, :get_by, fn sub: ^sub ->
+        {:ok, %ResourceOwner{sub: sub}}
+      end)
+
+      %Token{value: access_token} = insert(:token, sub: sub)
 
       conn =
         %Plug.Conn{}
@@ -79,15 +95,53 @@ defmodule Boruta.OpenidTest.CredentialTest do
                 %Error{
                   status: :bad_request,
                   error: :invalid_request,
-                  error_description: "Invalid credential identifier."
+                  error_description: "Credential not found."
                 }}
     end
 
-    test "returns a credential with a valid credential_identifier" do
-      credential_params = %{"credential_identifier" => "identifier"}
+    test "returns a credential with a valid credential type" do
+      {_, public_jwk} = public_key_fixture() |> JOSE.JWK.from_pem() |> JOSE.JWK.to_map()
+
+      signer =
+        Joken.Signer.create("RS256", %{"pem" => private_key_fixture()}, %{
+          "jwk" => public_jwk,
+          "typ" => "openid4vci-proof+jwt"
+        })
+
+      {:ok, token, _claims} =
+        VerifiableCredentials.Token.generate_and_sign(
+          %{
+            "aud" => Config.issuer(),
+            "iat" => :os.system_time(:seconds)
+          },
+          signer
+        )
+
+      proof = %{
+        "proof_type" => "jwt",
+        "jwt" => token
+      }
+
+      credential_params = %{"types" => ["VerifiableCredential"], "proof" => proof}
+      sub = SecureRandom.uuid()
+
+      expect(Boruta.Support.ResourceOwners, :get_by, fn sub: ^sub ->
+        {:ok,
+         %ResourceOwner{
+           sub: sub,
+           credential_configuration: %{
+             "UniversityDegree" => %{
+               types: ["VerifiableCredential"]
+             }
+           }
+         }}
+      end)
 
       %Token{value: access_token} =
-        insert(:token, authorization_details: [%{"credential_identifiers" => ["identifier"]}])
+        insert(:token,
+          sub: sub,
+          authorization_details: [%{"credential_identifiers" => ["identifier"]}]
+        )
 
       conn =
         %Plug.Conn{}
@@ -97,8 +151,16 @@ defmodule Boruta.OpenidTest.CredentialTest do
                {:credential_created,
                 %CredentialResponse{
                   format: "jwt_vc_json",
-                  credential: ""
+                  credential: "***REMOVED***"
                 }}
     end
+  end
+
+  def public_key_fixture do
+    "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEA1PaP/gbXix5itjRCaegvI/B3aFOeoxlwPPLvfLHGA4QfDmVOf8cU\n8OuZFAYzLArW3PnnwWWy39nVJOx42QRVGCGdUCmV7shDHRsr86+2DlL7pwUa9QyH\nsTj84fAJn2Fv9h9mqrIvUzAtEYRlGFvjVTGCwzEullpsB0GJafopUTFby8WdSq3d\nGLJBB1r+Q8QtZnAxxvolhwOmYkBkkidefmm48X7hFXL2cSJm2G7wQyinOey/U8xD\nZ68mgTakiqS2RtjnFD0dnpBl5CYTe4s6oZKEyFiFNiW4KkR1GVjsKwY9oC2tpyQ0\nAEUMvk9T9VdIltSIiAvOKlwFzL49cgwZDwIDAQAB\n-----END RSA PUBLIC KEY-----\n\n"
+  end
+
+  def private_key_fixture do
+    "***REMOVED***\n\n"
   end
 end

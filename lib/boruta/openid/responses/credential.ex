@@ -12,13 +12,8 @@ defmodule Boruta.Openid.CredentialResponse do
     credential: String.t()
   }
 
-  def from_tokens(%{
-    access_token: _access_token
-  }, _credential_params) do
-    %__MODULE__{
-      format: "jwt_vc_json",
-    credential: "***REMOVED***"
-    }
+  def from_credential(credential) do
+    struct(__MODULE__, credential)
   end
 M
 end
