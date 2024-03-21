@@ -4,6 +4,12 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
   import Boruta.Factory
   import Mox
 
+  defmodule Token do
+    @moduledoc false
+
+    use Joken.Config, default_signer: :pem_rs512
+  end
+
   alias Boruta.Ecto
   alias Boruta.Ecto.ScopeStore
   alias Boruta.Oauth
@@ -1275,6 +1281,56 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
                 }}
     end
 
+    # TODO test dpop implementation
+
+    test "returns a token when dpop is valid", %{client: client, code: code, resource_owner: resource_owner} do
+      {_, jwk} = JOSE.JWK.from_pem(valid_public_key()) |> JOSE.JWK.to_map()
+      signer = Joken.Signer.create("RS512", %{"pem" => valid_private_key()}, %{
+        "jwk" => jwk,
+        "typ" => "dpop+jwt"
+      })
+
+      {:ok, dpop, _claims} = Token.encode_and_sign(%{
+        "htu" => "http://host/pa/th",
+        "htm" => "POST"
+      }, signer)
+      ResourceOwners
+      |> expect(:get_by, 2, fn _params -> {:ok, resource_owner} end)
+
+      redirect_uri = List.first(client.redirect_uris)
+
+      case Oauth.token(
+             %Plug.Conn{
+               method: "POST",
+               host: "host",
+               request_path: "/pa/th",
+               req_headers: [{"dpop", dpop}],
+               body_params: %{
+                 "grant_type" => "authorization_code",
+                 "client_id" => client.id,
+                 "code" => code.value,
+                 "redirect_uri" => redirect_uri
+               }
+             },
+             ApplicationMock
+           ) do
+        {:token_success,
+         %TokenResponse{
+           token_type: token_type,
+           access_token: access_token,
+           expires_in: expires_in,
+           refresh_token: refresh_token
+         }} ->
+          assert token_type == "bearer"
+          assert access_token
+          assert expires_in
+          assert refresh_token
+
+        _ ->
+          assert false
+      end
+    end
+
     test "returns a token", %{client: client, code: code, resource_owner: resource_owner} do
       ResourceOwners
       |> expect(:get_by, 2, fn _params -> {:ok, resource_owner} end)
@@ -1809,5 +1865,13 @@ defmodule Boruta.OauthTest.AuthorizationCodeGrantTest do
           assert false
       end
     end
+  end
+
+  def valid_public_key do
+    "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEA1PaP/gbXix5itjRCaegvI/B3aFOeoxlwPPLvfLHGA4QfDmVOf8cU\n8OuZFAYzLArW3PnnwWWy39nVJOx42QRVGCGdUCmV7shDHRsr86+2DlL7pwUa9QyH\nsTj84fAJn2Fv9h9mqrIvUzAtEYRlGFvjVTGCwzEullpsB0GJafopUTFby8WdSq3d\nGLJBB1r+Q8QtZnAxxvolhwOmYkBkkidefmm48X7hFXL2cSJm2G7wQyinOey/U8xD\nZ68mgTakiqS2RtjnFD0dnpBl5CYTe4s6oZKEyFiFNiW4KkR1GVjsKwY9oC2tpyQ0\nAEUMvk9T9VdIltSIiAvOKlwFzL49cgwZDwIDAQAB\n-----END RSA PUBLIC KEY-----\n\n"
+  end
+
+  def valid_private_key do
+    "***REMOVED***\n\n"
   end
 end
