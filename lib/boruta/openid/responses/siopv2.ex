@@ -10,7 +10,6 @@ defmodule Boruta.Openid.SiopV2Response do
   @enforce_keys [
     :client_id,
     :code,
-    :response_type,
     :scope,
     :redirect_uri,
     :issuer,
@@ -21,7 +20,7 @@ defmodule Boruta.Openid.SiopV2Response do
 
   defstruct client_id: nil,
             code: nil,
-            response_type: nil,
+            response_type: "id_token",
             scope: nil,
             redirect_uri: nil,
             issuer: nil,
@@ -45,7 +44,6 @@ defmodule Boruta.Openid.SiopV2Response do
     %__MODULE__{
       client_id: request.client_id,
       code: code,
-      response_type: request.response_type,
       scope: code.scope,
       redirect_uri: code.redirect_uri,
       issuer: Boruta.Config.issuer(),
