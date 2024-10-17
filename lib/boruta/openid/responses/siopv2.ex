@@ -10,7 +10,6 @@ defmodule Boruta.Openid.SiopV2Response do
   @enforce_keys [
     :client_id,
     :code,
-    :response_type,
     :scope,
     :redirect_uri,
     :issuer,
@@ -21,7 +20,7 @@ defmodule Boruta.Openid.SiopV2Response do
 
   defstruct client_id: nil,
             code: nil,
-            response_type: nil,
+            response_type: "id_token",
             scope: nil,
             redirect_uri: nil,
             issuer: nil,
@@ -41,16 +40,15 @@ defmodule Boruta.Openid.SiopV2Response do
           nonce: String.t()
         }
 
-  def from_tokens(%{siopv2_code: code}, request) do
+  def from_tokens(%{siopv2_code: code, response_mode: response_mode}, request) do
     %__MODULE__{
       client_id: request.client_id,
       code: code,
-      response_type: request.response_type,
       scope: code.scope,
       redirect_uri: code.redirect_uri,
       issuer: Boruta.Config.issuer(),
       client: code.client,
-      response_mode: "direct_post",
+      response_mode: response_mode,
       nonce: code.nonce
     }
   end
