@@ -11,7 +11,7 @@ defmodule Boruta.Internal.Signatures do
 
   @moduledoc false
 
-  alias Boruta.Internal.Signatures.KeyPair
+  alias Boruta.Internal.Signatures.SigningKey
   alias Boruta.Oauth.Client
 
   @signature_algorithms [
@@ -135,13 +135,14 @@ defmodule Boruta.Internal.Signatures do
     end
   end
 
-  @spec verifiable_credential_sign(payload :: map(), client :: Client.t()) ::
+  @spec verifiable_credential_sign(payload :: map(), client :: Client.t(), format :: String.t()) ::
           jwt :: String.t() | {:error, reason :: String.t()}
   def verifiable_credential_sign(
         payload,
         %Client{
           id_token_signature_alg: signature_alg
-        } = client
+        } = client,
+        _format
       ) do
     with {:ok, signing_key} <- get_signing_key(client, :verifiable_credential) do
       signer =
@@ -186,7 +187,7 @@ defmodule Boruta.Internal.Signatures do
 
   defp get_signing_key(client, :id_token) do
     {:ok,
-     %KeyPair{
+     %SigningKey{
        type: :internal,
        private_key: client.private_key,
        secret: client.secret,
@@ -196,7 +197,7 @@ defmodule Boruta.Internal.Signatures do
 
   defp get_signing_key(client, :userinfo) do
     {:ok,
-     %KeyPair{
+     %SigningKey{
        type: :internal,
        private_key: client.private_key,
        secret: client.secret,
@@ -206,7 +207,7 @@ defmodule Boruta.Internal.Signatures do
 
   defp get_signing_key(client, :verifiable_credential) do
     {:ok,
-     %KeyPair{
+     %SigningKey{
        type: :internal,
        private_key: client.private_key,
        secret: client.secret,
