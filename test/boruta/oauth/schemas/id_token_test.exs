@@ -649,6 +649,7 @@ defmodule Boruta.Oauth.IdTokenTest do
       id_token_ttl: 10,
       id_token_signature_alg: "RS512",
       secret: "secret",
+      signatures_adapter: "Elixir.Boruta.Internal.Signatures",
       private_key:
         "***REMOVED***\n\n"
     }
